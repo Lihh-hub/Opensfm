@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <opencv2/opencv.hpp>
 #include <random>
 
@@ -88,6 +89,7 @@ class DepthmapEstimator {
                                           int other);
   float ComputePlaneImageScore(int i, int j, const cv::Vec3f &plane, int other);
   float BilateralWeight(float dcolor, float dx, float dy);
+  void UpdatePatchWeights();
   void PostProcess(DepthmapEstimatorResult *result);
 
  private:
@@ -107,7 +109,10 @@ class DepthmapEstimator {
   std::mt19937 rng_;
   std::uniform_int_distribution<int> uni_;
   std::normal_distribution<float> unit_normal_;
-  std::vector<float> patch_variance_buffer_;
+  cv::Mat patch_sum_;
+  cv::Mat patch_squared_sum_;
+  std::vector<float> patch_spatial_weights_;
+  std::array<float, 256> patch_color_weights_;
 };
 
 class DepthmapCleaner {

@@ -138,8 +138,9 @@ DepthmapEstimator::DepthmapEstimator()
       min_patch_variance_(5 * 5),
       rng_{std::random_device{}()},
       uni_(0, 0),
-      unit_normal_(0, 1),
-      patch_variance_buffer_(patch_size_ * patch_size_) {}
+      unit_normal_(0, 1) {
+  UpdatePatchWeights();
+}
 
 void DepthmapEstimator::AddView(const double *pK, const double *pR,
                                 const double *pt, const unsigned char *pimage,
@@ -153,6 +154,10 @@ void DepthmapEstimator::AddView(const double *pK, const double *pR,
   as_.emplace_back(Qs_.back() * ts_.front() - ts_.back());
   images_.emplace_back(cv::Mat(height, width, CV_8U, (void *)pimage).clone());
   masks_.emplace_back(cv::Mat(height, width, CV_8U, (void *)pmask).clone());
+  if (images_.size() == 1) {
+    cv::integral(images_.front(), patch_sum_, patch_squared_sum_, CV_64F,
+                 CV_64F);
+  }
   std::size_t size = images_.size();
   int a = (size > 1) ? 1 : 0;
   int b = (size > 1) ? size - 1 : 0;
@@ -172,7 +177,7 @@ void DepthmapEstimator::SetPatchMatchIterations(int n) {
 
 void DepthmapEstimator::SetPatchSize(int size) {
   patch_size_ = size;
-  patch_variance_buffer_.resize(patch_size_ * patch_size_);
+  UpdatePatchWeights();
 }
 
 void DepthmapEstimator::SetMinPatchSD(float sd) {
@@ -267,15 +272,25 @@ void DepthmapEstimator::ComputeIgnoreMask(DepthmapEstimatorResult *result) {
 }
 
 float DepthmapEstimator::PatchVariance(int i, int j) {
-  float *patch = patch_variance_buffer_.data();
   int hpz = (patch_size_ - 1) / 2;
-  int counter = 0;
-  for (int u = -hpz; u <= hpz; ++u) {
-    for (int v = -hpz; v <= hpz; ++v) {
-      patch[counter++] = images_[0].at<unsigned char>(i + u, j + v);
-    }
-  }
-  return Variance(patch, patch_size_ * patch_size_);
+  const int top = i - hpz;
+  const int left = j - hpz;
+  const int bottom = i + hpz + 1;
+  const int right = j + hpz + 1;
+  const double sum =
+      patch_sum_.at<double>(bottom, right) -
+      patch_sum_.at<double>(top, right) -
+      patch_sum_.at<double>(bottom, left) +
+      patch_sum_.at<double>(top, left);
+  const double squared_sum =
+      patch_squared_sum_.at<double>(bottom, right) -
+      patch_squared_sum_.at<double>(top, right) -
+      patch_squared_sum_.at<double>(bottom, left) +
+      patch_squared_sum_.at<double>(top, left);
+  const double count = patch_size_ * patch_size_;
+  const double mean = sum / count;
+  return static_cast<float>(
+      std::max(0.0, squared_sum / count - mean * mean));
 }
 
 void DepthmapEstimator::PatchMatchForwardPass(DepthmapEstimatorResult *result,
@@ -476,12 +491,34 @@ float DepthmapEstimator::ComputePlaneImageScore(int i, int j,
 }
 
 float DepthmapEstimator::BilateralWeight(float dcolor, float dx, float dy) {
+  const int hpz = (patch_size_ - 1) / 2;
+  const int color_index =
+      std::min(255, std::max(0, static_cast<int>(std::abs(dcolor))));
+  const int x = static_cast<int>(dx) + hpz;
+  const int y = static_cast<int>(dy) + hpz;
+  return patch_color_weights_[color_index] *
+         patch_spatial_weights_[y * patch_size_ + x];
+}
+
+void DepthmapEstimator::UpdatePatchWeights() {
   const float dcolor_sigma = 50.0f;
-  const float dx_sigma = 5.0f;
-  const float dcolor_factor = 1.0f / (2 * dcolor_sigma * dcolor_sigma);
-  const float dx_factor = 1.0f / (2 * dx_sigma * dx_sigma);
-  return exp(-dcolor * dcolor * dcolor_factor -
-             (dx * dx + dy * dy) * dx_factor);
+  const float spatial_sigma = 5.0f;
+  const float color_factor = 1.0f / (2 * dcolor_sigma * dcolor_sigma);
+  const float spatial_factor = 1.0f / (2 * spatial_sigma * spatial_sigma);
+
+  for (int color = 0; color < 256; ++color) {
+    patch_color_weights_[color] =
+        std::exp(-color * color * color_factor);
+  }
+
+  patch_spatial_weights_.resize(patch_size_ * patch_size_);
+  const int hpz = (patch_size_ - 1) / 2;
+  for (int dy = -hpz; dy <= hpz; ++dy) {
+    for (int dx = -hpz; dx <= hpz; ++dx) {
+      patch_spatial_weights_[(dy + hpz) * patch_size_ + dx + hpz] =
+          std::exp(-(dx * dx + dy * dy) * spatial_factor);
+    }
+  }
 }
 
 void DepthmapEstimator::PostProcess(DepthmapEstimatorResult *result) {

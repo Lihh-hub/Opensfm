@@ -4,6 +4,10 @@ This fork includes conservative runtime optimizations for ODM workloads. The
 defaults favor processing speed while retaining compatibility with existing
 feature, word, match, and track files.
 
+The bundled OpenSfM depthmap path also uses integral-image patch variance and
+precomputed bilateral weights. ODM pipelines that use OpenMVS for dense
+reconstruction are unaffected by that change.
+
 ## Recommended ODM Configuration
 
 ```yaml
