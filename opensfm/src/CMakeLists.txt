@@ -40,8 +40,21 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 endif()
 
-# For compiling VLFeat
-add_definitions(-DVL_DISABLE_AVX)
+# VLFeat can use its AVX kernels on supported CPUs. Disable this option when
+# building a single portable binary for older x86 processors.
+option(OPENSFM_ENABLE_AVX "Enable VLFeat AVX kernels" on)
+if (NOT OPENSFM_ENABLE_AVX)
+  add_definitions(-DVL_DISABLE_AVX)
+endif()
+
+# Native tuning is useful for private ODM workers where the build and runtime
+# CPU are the same. It stays off by default so distributed wheels remain
+# portable.
+option(OPENSFM_NATIVE_ARCH "Tune generated code for the build CPU" off)
+if (OPENSFM_NATIVE_ARCH AND NOT WIN32)
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+endif()
 
 # Use the version of vlfeat in ./src/third_party/vlfeat
 add_definitions(-DINPLACE_VLFEAT)
@@ -98,7 +111,7 @@ endif()
 
 
 ####### Testing #######
-option(OPENSFM_BUILD_TESTS "Build OpenSfM unit tests." on)
+option(OPENSFM_BUILD_TESTS "Build OpenSfM unit tests." off)
 if(OPENSFM_BUILD_TESTS)
 find_package(Glog REQUIRED)
 endif()
