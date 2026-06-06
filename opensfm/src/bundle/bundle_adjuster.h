@@ -244,6 +244,7 @@ class BundleAdjuster {
   void SetAdjustAbsolutePositionStd(bool adjust);
 
   void SetMaxNumIterations(int miter);
+  void SetFunctionTolerance(double tolerance);
   void SetNumThreads(int n);
   void SetUseAnalyticDerivatives(bool use);
   void SetLinearSolverType(std::string t);
@@ -347,6 +348,7 @@ class BundleAdjuster {
   bool compute_reprojection_errors_;
 
   int max_num_iterations_;
+  double function_tolerance_;
   int num_threads_;
   std::string linear_solver_type_;
   std::string covariance_algorithm_type_;

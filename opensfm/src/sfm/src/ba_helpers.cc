@@ -260,8 +260,10 @@ py::tuple BAHelpers::BundleLocal(
                              config["rig_rotation_sd"].cast<double>());
 
   ba.SetNumThreads(config["processes"].cast<int>());
-  ba.SetMaxNumIterations(10);
-  ba.SetLinearSolverType("DENSE_SCHUR");
+  ba.SetMaxNumIterations(config["local_bundle_max_iterations"].cast<int>());
+  ba.SetFunctionTolerance(config["bundle_function_tolerance"].cast<double>());
+  ba.SetLinearSolverType(
+      config["local_bundle_linear_solver_type"].cast<std::string>());
   const auto timer_setup = std::chrono::high_resolution_clock::now();
 
   {
@@ -538,8 +540,11 @@ py::dict BAHelpers::BundleShotPoses(
                              config["rig_rotation_sd"].cast<double>());
 
   ba.SetNumThreads(config["processes"].cast<int>());
-  ba.SetMaxNumIterations(10);
-  ba.SetLinearSolverType("DENSE_QR");
+  ba.SetMaxNumIterations(
+      config["bundle_shot_poses_max_iterations"].cast<int>());
+  ba.SetFunctionTolerance(config["bundle_function_tolerance"].cast<double>());
+  ba.SetLinearSolverType(
+      config["bundle_shot_poses_linear_solver_type"].cast<std::string>());
   const auto timer_setup = std::chrono::high_resolution_clock::now();
 
   {
@@ -717,7 +722,9 @@ py::dict BAHelpers::Bundle(
 
   ba.SetNumThreads(config["processes"].cast<int>());
   ba.SetMaxNumIterations(config["bundle_max_iterations"].cast<int>());
-  ba.SetLinearSolverType("SPARSE_SCHUR");
+  ba.SetFunctionTolerance(config["bundle_function_tolerance"].cast<double>());
+  ba.SetLinearSolverType(
+      config["bundle_linear_solver_type"].cast<std::string>());
   const auto timer_setup = std::chrono::high_resolution_clock::now();
 
   {

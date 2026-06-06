@@ -4,6 +4,9 @@ This fork is pretty close to upstream OpenSfM, but includes changes specific to 
 
 Please note that all such changes are released under the AGPLv3 license, not BSD.
 
+Performance-related build and runtime options are documented in
+[PERFORMANCE.md](PERFORMANCE.md).
+
 OpenSfM ![Docker workflow](https://github.com/mapillary/opensfm/workflows/Docker%20CI/badge.svg)
 =======
 

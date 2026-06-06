@@ -37,6 +37,7 @@ BundleAdjuster::BundleAdjuster() {
   compute_reprojection_errors_ = true;
   adjust_absolute_position_std_ = false;
   max_num_iterations_ = 500;
+  function_tolerance_ = 1e-6;
   num_threads_ = 1;
   linear_solver_type_ = "SPARSE_SCHUR";
   covariance_algorithm_type_ = "SPARSE_QR";
@@ -360,6 +361,10 @@ void BundleAdjuster::SetAdjustAbsolutePositionStd(bool adjust) {
 
 void BundleAdjuster::SetMaxNumIterations(int miter) {
   max_num_iterations_ = miter;
+}
+
+void BundleAdjuster::SetFunctionTolerance(double tolerance) {
+  function_tolerance_ = tolerance;
 }
 
 void BundleAdjuster::SetNumThreads(int n) { num_threads_ = n; }
@@ -1078,6 +1083,7 @@ void BundleAdjuster::Run() {
   }
   options.num_threads = num_threads_;
   options.max_num_iterations = max_num_iterations_;
+  options.function_tolerance = function_tolerance_;
 
   ceres::Solve(options, &problem, &last_run_summary_);
 

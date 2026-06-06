@@ -2,6 +2,7 @@
 
 import multiprocessing
 import os
+import shlex
 import subprocess
 import sys
 
@@ -39,6 +40,7 @@ def configure_c_extension():
             "-DVCPKG_TARGET_TRIPLET=x64-windows",
             "-DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake",
         ]
+    cmake_command += shlex.split(os.environ.get("OPENSFM_CMAKE_ARGS", ""))
     subprocess.check_call(cmake_command, cwd="cmake_build")
 
 
@@ -47,7 +49,16 @@ def build_c_extension():
     print("Compiling extension...")
     if sys.platform == "win32":
         subprocess.check_call(
-            ["cmake", "--build", ".", "--config", "Release"], cwd="cmake_build"
+            [
+                "cmake",
+                "--build",
+                ".",
+                "--config",
+                "Release",
+                "--parallel",
+                str(multiprocessing.cpu_count()),
+            ],
+            cwd="cmake_build",
         )
     else:
         subprocess.check_call(

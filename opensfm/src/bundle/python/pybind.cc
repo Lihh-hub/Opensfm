@@ -99,6 +99,8 @@ PYBIND11_MODULE(pybundle, m) {
            &bundle::BundleAdjuster::SetComputeReprojectionErrors)
       .def("set_max_num_iterations",
            &bundle::BundleAdjuster::SetMaxNumIterations)
+      .def("set_function_tolerance",
+           &bundle::BundleAdjuster::SetFunctionTolerance)
       .def("set_adjust_absolute_position_std",
            &bundle::BundleAdjuster::SetAdjustAbsolutePositionStd)
       .def("set_num_threads", &bundle::BundleAdjuster::SetNumThreads)

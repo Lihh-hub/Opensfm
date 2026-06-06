@@ -70,9 +70,11 @@ ScoreInfo<typename MODEL::Type> Estimate(
 
       // Run local optimization (inner non-minimal RANSAC on inliers)
       if (best_found && params.use_local_optimization) {
+        std::vector<typename MODEL::Data> inliers_samples;
+        inliers_samples.reserve(samples.size());
         for (int k = 0; k < params.local_optimization_iterations; ++k) {
           // Gather inliers and use them for getting random sample
-          std::vector<typename MODEL::Data> inliers_samples;
+          inliers_samples.clear();
           for (const auto idx : best_score.inliers_indices) {
             inliers_samples.push_back(samples[idx]);
           }

@@ -263,6 +263,17 @@ class OpenSfMConfig:
     optimize_camera_parameters: bool = True
     # Maximum optimizer iterations.
     bundle_max_iterations: int = 100
+    # Ceres linear solver used for global bundle adjustment.
+    bundle_linear_solver_type: str = "SPARSE_SCHUR"
+    # Stop bundle adjustment when the relative cost change falls below this.
+    bundle_function_tolerance: float = 1e-6
+    # Local bundle settings. Small local problems generally perform best with
+    # a dense Schur solver.
+    local_bundle_max_iterations: int = 10
+    local_bundle_linear_solver_type: str = "DENSE_SCHUR"
+    # Solver used when only shot poses are optimized.
+    bundle_shot_poses_max_iterations: int = 10
+    bundle_shot_poses_linear_solver_type: str = "DENSE_QR"
 
     # Retriangulate all points from time to time
     retriangulation: bool = True
