@@ -212,6 +212,9 @@ TracksManager CreateTracksManager(
       throw std::runtime_error("Pair matches must be a NumPy array");
     }
     const auto info = pair_matches.request();
+    if (info.size == 0) {
+      continue;
+    }
     if (info.ndim != 2 || info.shape[1] != 2) {
       throw std::runtime_error("Pair matches must have shape (N, 2)");
     }

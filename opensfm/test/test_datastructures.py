@@ -1143,7 +1143,10 @@ def test_create_tracks_manager_from_arrays() -> None:
         "a": np.array([5, 6], dtype=np.int16),
         "b": np.array([7, 8], dtype=np.int16),
     }
-    matches = {("a", "b"): np.array([[0, 0], [1, 1]], dtype=np.int32)}
+    matches = {
+        ("a", "b"): np.array([[0, 0], [1, 1]], dtype=np.int32),
+        ("a", "missing"): np.array([]),
+    }
 
     tracks_manager = pymap.create_tracks_manager(
         features, colors, segmentations, instances, matches, 2

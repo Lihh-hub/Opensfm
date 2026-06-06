@@ -43,9 +43,6 @@ endif()
 # VLFeat can use its AVX kernels on supported CPUs. Disable this option when
 # building a single portable binary for older x86 processors.
 option(OPENSFM_ENABLE_AVX "Enable VLFeat AVX kernels" on)
-if (NOT OPENSFM_ENABLE_AVX)
-  add_definitions(-DVL_DISABLE_AVX)
-endif()
 
 # Native tuning is useful for private ODM workers where the build and runtime
 # CPU are the same. It stays off by default so distributed wheels remain
