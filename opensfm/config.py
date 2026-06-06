@@ -166,6 +166,13 @@ class OpenSfMConfig:
     matching_vlad_other_cameras: bool = False
     # Number of rounds to run when running triangulation-based pair selection
     matching_graph_rounds: int = 0
+    # Number of order-based neighbors used when the configured matching
+    # strategies produce no pairs. Set to 0 to retain the legacy all-pairs
+    # fallback.
+    matching_default_neighbors: int = 20
+    # Order-based neighbors used to keep images without GPS connected to the
+    # matching graph.
+    matching_no_gps_neighbors: int = 20
     # If True, removes static matches using ad-hoc heuristics
     matching_use_filters: bool = False
     # Use segmentation information (if available) to improve matching
@@ -348,6 +355,16 @@ class OpenSfMConfig:
     processes: int = 1
     # When processes > 1, number of threads used for reading images
     read_processes: int = 4
+
+    ##################################
+    # Params for intermediate storage
+    ##################################
+    # FAST stores NumPy archives without ZIP compression. COMPRESSED retains
+    # the legacy behavior and uses less disk space at the cost of CPU time.
+    intermediate_storage: str = "FAST"
+    # Compression level for pairwise match files. 1 is substantially faster
+    # than gzip's default while retaining backward-compatible files.
+    matches_gzip_compresslevel: int = 1
 
     ##################################
     # Params for submodel split and merge

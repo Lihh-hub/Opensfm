@@ -43,22 +43,27 @@ else:
 # Parallel processes
 def parallel_map(func, args, num_proc: int, max_batch_size: int = 1, backend="threading"):
     """Run function for all arguments using multiple processes."""
-    # De-activate/Restore any inner OpenCV threading
+    # Avoid nested OpenCV thread pools only when jobs are already executed in
+    # parallel. Keeping OpenCV's configured thread count for a single job is
+    # important for small datasets and individual feature extraction tasks.
     threads_used = cv2.getNumThreads()
-    cv2.setNumThreads(0)
 
     num_proc = min(num_proc, len(args))
     if num_proc <= 1:
         res = list(map(func, args))
     else:
-        with parallel_backend(backend, n_jobs=num_proc):
-            batch_size = max(1, int(len(args) / (num_proc * 2)))
-            batch_size = (
-                min(batch_size, max_batch_size) if max_batch_size else batch_size
-            )
-            res = Parallel(batch_size=batch_size)(delayed(func)(arg) for arg in args)
-
-    cv2.setNumThreads(threads_used)
+        cv2.setNumThreads(1)
+        try:
+            with parallel_backend(backend, n_jobs=num_proc):
+                batch_size = max(1, int(len(args) / (num_proc * 2)))
+                batch_size = (
+                    min(batch_size, max_batch_size) if max_batch_size else batch_size
+                )
+                res = Parallel(batch_size=batch_size)(
+                    delayed(func)(arg) for arg in args
+                )
+        finally:
+            cv2.setNumThreads(threads_used)
     return res
 
 

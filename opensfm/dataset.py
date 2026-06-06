@@ -334,7 +334,13 @@ class DataSet(DataSetBase):
 
     def save_words(self, image: str, words: np.ndarray) -> None:
         with self.io_handler.open(self._words_file(image), "wb") as f:
-            np.savez_compressed(f, words=words.astype(np.uint16))
+            savez = (
+                np.savez_compressed
+                if self.config.get("intermediate_storage", "COMPRESSED").upper()
+                == "COMPRESSED"
+                else np.savez
+            )
+            savez(f, words=words.astype(np.uint16))
 
     def _matches_path(self) -> str:
         """Return path of matches directory"""
@@ -378,7 +384,12 @@ class DataSet(DataSetBase):
         self.io_handler.mkdir_p(self._matches_path())
 
         with BytesIO() as buffer:
-            with gzip.GzipFile(fileobj=buffer, mode="w") as fzip:
+            compresslevel = max(
+                0, min(9, int(self.config.get("matches_gzip_compresslevel", 9)))
+            )
+            with gzip.GzipFile(
+                fileobj=buffer, mode="w", compresslevel=compresslevel
+            ) as fzip:
                 pickle.dump(matches, fzip)
             with self.io_handler.open(self._matches_file(image), "wb") as fw:
                 fw.write(buffer.getvalue())

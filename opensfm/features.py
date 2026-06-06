@@ -109,10 +109,16 @@ class FeaturesData:
         descriptors = self.descriptors
         if descriptors is None:
             raise RuntimeError("No descriptors found, cannot save features data.")
+        savez = (
+            np.savez_compressed
+            if config.get("intermediate_storage", "COMPRESSED").upper()
+            == "COMPRESSED"
+            else np.savez
+        )
         semantic = self.semantic
         if semantic:
             instances = semantic.instances
-            np.savez_compressed(
+            savez(
                 fileobject,
                 points=self.points.astype(np.float32),
                 descriptors=descriptors.astype(feature_data_type),
@@ -123,7 +129,7 @@ class FeaturesData:
                 OPENSFM_FEATURES_VERSION=self.FEATURES_VERSION,
             )
         else:
-            np.savez_compressed(
+            savez(
                 fileobject,
                 points=self.points.astype(np.float32),
                 descriptors=descriptors.astype(feature_data_type),

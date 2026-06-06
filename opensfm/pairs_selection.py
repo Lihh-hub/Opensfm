@@ -597,72 +597,94 @@ def match_candidates_from_metadata(
     vlad_gps_distance = overriden_config["matching_vlad_gps_distance"]
     vlad_gps_neighbors = overriden_config["matching_vlad_gps_neighbors"]
     vlad_other_cameras = overriden_config["matching_vlad_other_cameras"]
+    default_neighbors = overriden_config.get("matching_default_neighbors", 0)
+    no_gps_neighbors = overriden_config.get("matching_no_gps_neighbors", 0)
 
     data.init_reference()
     reference = data.load_reference()
 
-    if not all(map(has_gps_info, exifs.values())):
-        if gps_neighbors != 0:
-            logger.warn(
-                "Not all images have GPS info. " "Disabling matching_gps_neighbors."
-            )
-        gps_neighbors = 0
-        max_distance = 0
-        graph_rounds = 0
-
     images_ref.sort()
 
-    if (
-        max_distance
-        == gps_neighbors
-        == time_neighbors
-        == order_neighbors
-        == bow_neighbors
-        == vlad_neighbors
-        == graph_rounds
-        == 0
-    ):
-        # All pair selection strategies deactivated so we match all pairs
-        d = set()
-        t = set()
-        g = set()
-        o = set()
-        b = set()
-        v = set()
-        pairs = {sorted_pair(i, j) for i in images_ref for j in images_cand if i != j}
-    else:
+    gps_ref = [image for image in images_ref if has_gps_info(exifs[image])]
+    gps_cand = [image for image in images_cand if has_gps_info(exifs[image])]
+    missing_gps = len(gps_ref) != len(images_ref) or len(gps_cand) != len(images_cand)
+    if missing_gps:
+        logger.warning(
+            "Some images have no GPS. GPS pair selection will use the remaining "
+            "images and order neighbors will connect images without GPS."
+        )
+
+    if gps_ref and gps_cand:
         d = match_candidates_by_distance(
-            images_ref, images_cand, exifs, reference, gps_neighbors, max_distance
+            gps_ref, gps_cand, exifs, reference, gps_neighbors, max_distance
         )
         g = match_candidates_by_graph(
-            images_ref, images_cand, exifs, reference, graph_rounds
+            gps_ref, gps_cand, exifs, reference, graph_rounds
         )
-        t = match_candidates_by_time(images_ref, images_cand, exifs, time_neighbors)
-        o = match_candidates_by_order(images_ref, images_cand, order_neighbors)
-        b = match_candidates_with_bow(
-            data,
-            images_ref,
-            images_cand,
-            exifs,
-            reference,
-            bow_neighbors,
-            bow_gps_distance,
-            bow_gps_neighbors,
-            bow_other_cameras,
+    else:
+        d = set()
+        g = set()
+
+    t = match_candidates_by_time(images_ref, images_cand, exifs, time_neighbors)
+    o = match_candidates_by_order(images_ref, images_cand, order_neighbors)
+    if missing_gps and no_gps_neighbors > 0:
+        no_gps_pairs = match_candidates_by_order(
+            images_ref, images_cand, no_gps_neighbors
         )
-        v = match_candidates_with_vlad(
-            data,
-            images_ref,
-            images_cand,
-            exifs,
-            reference,
-            vlad_neighbors,
-            vlad_gps_distance,
-            vlad_gps_neighbors,
-            vlad_other_cameras,
-            {},
-        )
-        pairs = d | g | t | o | set(b) | set(v)
+        o |= {
+            pair
+            for pair in no_gps_pairs
+            if not has_gps_info(exifs[pair[0]])
+            or not has_gps_info(exifs[pair[1]])
+        }
+
+    b = match_candidates_with_bow(
+        data,
+        images_ref,
+        images_cand,
+        exifs,
+        reference,
+        bow_neighbors,
+        bow_gps_distance,
+        bow_gps_neighbors,
+        bow_other_cameras,
+    )
+    v = match_candidates_with_vlad(
+        data,
+        images_ref,
+        images_cand,
+        exifs,
+        reference,
+        vlad_neighbors,
+        vlad_gps_distance,
+        vlad_gps_neighbors,
+        vlad_other_cameras,
+        {},
+    )
+    pairs = d | g | t | o | set(b) | set(v)
+
+    fallback = set()
+    if not pairs:
+        if default_neighbors > 0:
+            fallback = match_candidates_by_order(
+                images_ref, images_cand, default_neighbors
+            )
+            logger.info(
+                "No configured pair selection strategy produced candidates. "
+                "Using %d order neighbors.", default_neighbors
+            )
+        else:
+            fallback = {
+                sorted_pair(i, j)
+                for i in images_ref
+                for j in images_cand
+                if i != j
+            }
+            logger.warning(
+                "No pair selection strategy produced candidates. "
+                "Falling back to all image pairs."
+            )
+        pairs = fallback
 
     pairs = ordered_pairs(pairs, images_ref)
 
@@ -673,6 +695,7 @@ def match_candidates_from_metadata(
         "num_pairs_order": len(o),
         "num_pairs_bow": len(b),
         "num_pairs_vlad": len(v),
+        "num_pairs_fallback": len(fallback),
     }
     return pairs, report
 
