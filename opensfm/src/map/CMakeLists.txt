@@ -33,7 +33,10 @@ target_include_directories(map
     ${CMAKE_SOURCE_DIR}
 )
 
-pybind11_add_module(pymap python/pybind.cc)
+pybind11_add_module(pymap
+  python/pybind.cc
+  src/tracks_manager_builder.cc
+)
 target_link_libraries(pymap
   PRIVATE
     map

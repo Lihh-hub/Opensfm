@@ -10,6 +10,7 @@
 #include <map/pybind_utils.h>
 #include <map/rig.h>
 #include <map/shot.h>
+#include <map/tracks_manager_builder.h>
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -294,6 +295,11 @@ PYBIND11_MODULE(pymap, m) {
            py::arg("shots") = std::vector<map::ShotId>(),
            py::arg("tracks") = std::vector<map::TrackId>(),
            py::call_guard<py::gil_scoped_release>());
+
+  m.def("create_tracks_manager", &map::CreateTracksManager,
+        py::arg("features"), py::arg("colors"), py::arg("segmentations"),
+        py::arg("instances"), py::arg("matches"),
+        py::arg("min_track_length"));
 
   py::class_<map::PanoShotView>(m, "PanoShotView")
       .def(py::init<map::Map &>(),

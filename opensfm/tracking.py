@@ -67,6 +67,17 @@ def create_tracks_manager(
     min_length: int,
 ) -> TracksManager:
     """Link matches into tracks."""
+    if hasattr(pymap, "create_tracks_manager"):
+        return pymap.create_tracks_manager(
+            features,
+            colors,
+            segmentations,
+            instances,
+            matches,
+            min_length,
+        )
+
+    # Compatibility fallback for installations using an older pymap module.
     logger.debug("Merging features onto tracks")
     uf = UnionFind()
     for im1, im2 in matches:

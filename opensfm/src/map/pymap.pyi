@@ -14,9 +14,13 @@ import numpy
 import opensfm.pygeo
 import opensfm.pygeometry
 from typing import *
+
+def create_tracks_manager(features: Dict[str, numpy.ndarray], colors: Dict[str, numpy.ndarray], segmentations: Dict[str, numpy.ndarray], instances: Dict[str, numpy.ndarray], matches: Dict[Tuple[str, str], numpy.ndarray], min_track_length: int) -> TracksManager: ...
+
 __all__  = [
 "BiasView",
 "CameraView",
+"create_tracks_manager",
 "ErrorType",
 "GroundControlPoint",
 "GroundControlPointObservation",

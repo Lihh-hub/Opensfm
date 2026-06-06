@@ -1126,6 +1126,39 @@ def test_gcp() -> None:
         assert pt.observations[1].shot_id == "p2"
 
 
+def test_create_tracks_manager_from_arrays() -> None:
+    features = {
+        "a": np.array([[0.1, 0.2, 0.01], [0.3, 0.4, 0.02]], dtype=np.float32),
+        "b": np.array([[0.5, 0.6, 0.03], [0.7, 0.8, 0.04]], dtype=np.float32),
+    }
+    colors = {
+        "a": np.array([[10, 20, 30], [40, 50, 60]], dtype=np.uint8),
+        "b": np.array([[70, 80, 90], [100, 110, 120]], dtype=np.uint8),
+    }
+    segmentations = {
+        "a": np.array([1, 2], dtype=np.uint8),
+        "b": np.array([3, 4], dtype=np.uint8),
+    }
+    instances = {
+        "a": np.array([5, 6], dtype=np.int16),
+        "b": np.array([7, 8], dtype=np.int16),
+    }
+    matches = {("a", "b"): np.array([[0, 0], [1, 1]], dtype=np.int32)}
+
+    tracks_manager = pymap.create_tracks_manager(
+        features, colors, segmentations, instances, matches, 2
+    )
+
+    assert tracks_manager.num_shots() == 2
+    assert tracks_manager.num_tracks() == 2
+    observations = tracks_manager.get_shot_observations("a")
+    assert {observation.id for observation in observations.values()} == {0, 1}
+    assert {observation.segmentation for observation in observations.values()} == {
+        1,
+        2,
+    }
+
+
 def test_add_correspondences_from_tracks_manager() -> None:
     n_shots = 3
     rec = _create_reconstruction(
