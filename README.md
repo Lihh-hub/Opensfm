@@ -7,6 +7,9 @@ Please note that all such changes are released under the AGPLv3 license, not BSD
 Performance-related build and runtime options are documented in
 [PERFORMANCE.md](PERFORMANCE.md).
 
+Detailed source locations and effects of the performance changes are documented
+in [MODIFICATION_DETAILS.md](MODIFICATION_DETAILS.md).
+
 OpenSfM ![Docker workflow](https://github.com/mapillary/opensfm/workflows/Docker%20CI/badge.svg)
 =======
 
